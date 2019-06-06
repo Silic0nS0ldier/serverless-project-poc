@@ -5,11 +5,11 @@
  */
 export class ApiRequest
 {
-    /** @type {readonly string} */
-    url;
+    /** @type {string|null} */
+    url = null;
 
-    /** @type {readonly ("GET" | "POST" | "DELETE" | "HEAD" | "PATCH" | "PUT" | "OPTIONS" | "TRACE" | "CONNECT")} */
-    method;
+    /** @type {"GET" | "POST" | "DELETE" | "HEAD" | "PATCH" | "PUT" | "OPTIONS" | "TRACE" | "CONNECT" | null} */
+    method = null;
 
     /**
      * @returns {Promise<any>}
@@ -41,7 +41,7 @@ export class ApiResponse
     /** @type {any} */
     body;
 
-    /** @type {ReadonlyMap<string, string>} */
+    /** @type {Map<string, string>} */
     headers = new Map();
 }
 

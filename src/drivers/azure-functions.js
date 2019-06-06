@@ -1,4 +1,3 @@
-/** @tscheck */
 import { ApiRequest, ApiResponse } from "./core.js";
 
 /**
@@ -15,17 +14,20 @@ export default function (func)
         let res = new AzureFunctionResponse(context);
 
         // Run function
-        res = func(req, res);
+        res = await Promise.resolve(func(req, res));
 
         // Normalise outputs
-        return (await Promise.resolve(res)).manufacture();
+        return res.manufacture();
     };
 }
 
 class AzureFunctionRequest extends ApiRequest
 {
-    /** @type {readonly import("@azure/functions").Context} */
-    _context;
+    /**
+     * @type {import("@azure/functions").Context}
+     * @private
+     */
+    context;
 
     /**
      * @param {import("@azure/functions").Context} context 
@@ -33,24 +35,28 @@ class AzureFunctionRequest extends ApiRequest
     constructor(context)
     {
         super();
-        this._context = context;
+        this.context = context;
     }
 
     get url()
     {
-        return this._context.req.url;
+        if (this.context.req)
+            return this.context.req.url;
+        return null;
     }
 
     get method()
     {
-        return this._context.req.method;
+        if (this.context.req)
+            return this.context.req.method;
+        return null;
     }
 
     async body()
     {
-        if (this._context.req.rawBody)
+        if (this.context.req && this.context.req.rawBody)
         {
-            return this._context.req.rawBody;
+            return this.context.req.rawBody;
         }
         else
         {
@@ -66,8 +72,11 @@ class AzureFunctionRequest extends ApiRequest
 
 class AzureFunctionResponse extends ApiResponse
 {
-    /** @type {readonly import("@azure/functions").Context} */
-    _context;
+    /**
+     * @type {import("@azure/functions").Context}
+     * @private
+     */
+    context;
 
     /**
      * @param {import("@azure/functions").Context} context 
@@ -75,7 +84,7 @@ class AzureFunctionResponse extends ApiResponse
     constructor(context)
     {
         super();
-        this._context = context;
+        this.context = context;
         this.headers.set('Content-Type', 'application/json');
     }
 
@@ -88,23 +97,7 @@ class AzureFunctionResponse extends ApiResponse
         return {
             status: 200,
             body: this.body,
-            headers: objectFromEntries(this.headers.entries())
+            headers: Object.fromEntries(this.headers.entries())
         };
     }
-}
-
-/**
- * Converts entries to object. Polyfill for Object.fromEntries
- * @param {IterableIterator<[string, string]>} entries 
- * @returns {object}
- */
-function objectFromEntries(entries)
-{
-    const obj = {};
-
-    for (const entry of entries) {
-        obj[entry[0]] = obj[entry[1]];
-    }
-
-    return obj;
 }
